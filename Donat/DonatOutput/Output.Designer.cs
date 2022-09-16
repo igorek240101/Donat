@@ -35,10 +35,11 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.ClientSize = new System.Drawing.Size(284, 261);
+            this.ClientSize = new System.Drawing.Size(935, 502);
             this.Name = "Output";
             this.Text = "Form1";
             this.Paint += new System.Windows.Forms.PaintEventHandler(this.Output_Paint);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Output_KeyDown);
             this.ResumeLayout(false);
 
         }
