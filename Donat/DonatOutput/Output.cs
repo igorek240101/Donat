@@ -1,4 +1,5 @@
 ﻿using DonatAbstract;
+using System.Drawing;
 
 namespace DonatOutput
 {
@@ -10,7 +11,7 @@ namespace DonatOutput
         Vector pR = new Vector(0, 1, 0);
         double angel;
         int x = -300, y = 300, z = -300;
-        double perspective = 0.01;
+        double perspective = 0.002;
         readonly int dist = 1;
         Vector point1;
         Vector point2;
@@ -159,6 +160,51 @@ namespace DonatOutput
                 }
             }
             Graphics graphics = this.CreateGraphics();
+            DrawArrow(graphics);
+            if(O.Z < (point1.Z + point2.Z)/2)
+            {
+                DrawLine(graphics);
+                DrawTor(graphics, values);
+            }
+            else
+            {
+                DrawTor(graphics, values);
+                DrawLine(graphics);
+            }
+        }
+
+        private void DrawArrow(Graphics graphics)
+        {
+            Pen arrow = new Pen(Color.DarkGray, 3);
+            arrow.EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor;
+            graphics.DrawLine(arrow,
+                -x,
+                y,
+                (int)Math.Round(250 / (perspective * (-z) + 1)) - x,
+                y);
+            graphics.DrawLine(arrow,
+                -x,
+                 y,
+                -x,
+                 y - ((int)Math.Round(250 / (perspective * (-z) + 1))));
+            graphics.DrawLine(arrow,
+                -x,
+                 y,
+                ((int)Math.Round(-x / (perspective * (-z) + 1))),
+                 ((int)Math.Round(y / (perspective * (-z) + 1))));
+        }
+
+        private void DrawLine(Graphics graphics)
+        {
+            graphics.DrawLine(new Pen(Color.White, 5),
+                ((int)Math.Round(point1.X / (perspective * (point1.Z - z) + 1))) - x,
+                y - ((int)Math.Round(point1.Y / (perspective * (point1.Z - z) + 1))),
+                (int)Math.Round(point2.X / (perspective * (point2.Z - z) + 1)) - x,
+                y - ((int)Math.Round(point2.Y / (perspective * (point2.Z - z) + 1))));
+        }
+
+        private void DrawTor(Graphics graphics, Dictionary<(int, int), (Vector, byte)> values)
+        {
             Pen white = new Pen(Color.White);
             Pen red = new Pen(Color.Red);
             Pen green = new Pen(Color.Green);
@@ -175,49 +221,10 @@ namespace DonatOutput
             Brush yellowBrush = new SolidBrush(Color.Yellow);
             Brush orangeBrush = new SolidBrush(Color.Orange);
             Brush purpleBrush = new SolidBrush(Color.Purple);
-            graphics.DrawLine(new Pen(Color.White, 10), point1.X - x, y - point1.Y, point2.X - x, y - point2.Y);
-            var resValues = values.Values.ToList().ConvertAll(t => (new Vector(t.Item1.X - x, y - t.Item1.Y, t.Item1.Z),t.Item2)).OrderByDescending(t => t.Item1.Z);
-            /*
-            List<List<KeyValuePair<(int, int), (Vector, Vector, Vector, Vector, byte)>>> sort = new List<List<KeyValuePair<(int, int), (Vector, Vector, Vector, Vector, byte)>>>();
-            for (int i = 0; i < 7; i++)
-            {
-                var value = values.Where(t => t.Value.Item5 == i).ToList();
-                if (value.Count > 0)
-                {
-                    var count = value.Min(t => t.Value.Item1);
-                    bool mark = false;
-                    /*
-                    for (int j = 0; j < sort.Count; j++)
-                    {
-                        if (sort[j].Value >= count)
-                        {
-                            sort.Insert(j, KeyValuePair.Create(value, count));
-                            mark = true;
-                            break;
-                        }
-                    }
-                    if (i == 0 || mark)
-            sort.Add(value);
-                }
-            }
-            foreach (var pair in sort)
-            {
-                if (pair.Count > 2)
-                {
-                    graphics.FillPolygon(pair.FirstOrDefault().Value.Item5 switch
-                    {
-                        0 => whiteBrush,
-                        1 => redBrush,
-                        2 => greenBrush,
-                        3 => blueBrush,
-                        4 => brownBrush,
-                        5 => yellowBrush,
-                        6 => orangeBrush,
-                        7 => purpleBrush
-                    }, MBO.MBOMethod(pair.ConvertAll(t => (t.Key.Item1, t.Key.Item2))).ConvertAll(t => new Point(t.Item1, t.Item2)).ToArray());
-                }
-            }
-            */
+            var resValues = values.Values.ToList().ConvertAll(t => (new Vector
+            (((int)Math.Round(t.Item1.X / (perspective * (t.Item1.Z - z) + 1))) - x,
+            y - ((int)Math.Round(t.Item1.Y / (perspective * (t.Item1.Z - z) + 1))),
+            t.Item1.Z), t.Item2)).OrderByDescending(t => t.Item1.Z);
             foreach (var value in resValues)
             {
                 switch (value.Item2)
@@ -299,6 +306,7 @@ namespace DonatOutput
                                     res[i].Item1.Z - point1.Z), res[i].Item2);
                 Vector e1 = point2 - point1;
                 Vector? e2 = null;
+                if(i == 0)O -= point1;
                 double normal = Math.Sqrt((e1.X * e1.X) + (e1.Y * e1.Y) + (e1.Z * e1.Z));
                 double cosX = 0, sinX = 0, cosY = 0, sinY = 0;
                 if(normal != 0)
@@ -317,6 +325,10 @@ namespace DonatOutput
                                 res[i].Item1.X,
                                 (int)Math.Round((cosX * res[i].Item1.Y) - (sinX * res[i].Item1.Z)),
                                 (int)Math.Round((sinX * res[i].Item1.Y) + (cosX * res[i].Item1.Z))), res[i].Item2);
+                        if (i == 0) O = new Vector(
+                                        O.X,
+                                        (int)Math.Round((cosX * O.Y) - (sinX * O.Z)),
+                                        (int)Math.Round((sinX * O.Y) + (cosX * O.Z)));
                     }
                     if (e2 == null) e2 = e1;
                     normal = Math.Sqrt((e2.Value.X * e2.Value.X) + (e2.Value.Z * e2.Value.Z));
@@ -335,25 +347,46 @@ namespace DonatOutput
                                 (int)Math.Round((cosY * res[i].Item1.X) - (sinY * res[i].Item1.Z)),
                                 res[i].Item1.Y,
                                 (int)Math.Round((sinY * res[i].Item1.X) + (cosY * res[i].Item1.Z))), res[i].Item2);
+                        if (i == 0) O = new Vector(
+                                        (int)Math.Round((cosY * O.X) - (sinY * O.Z)),
+                                        O.Y,
+                                        (int)Math.Round((sinY * O.X) + (cosY * O.Z)));
                     }
                 }
                 res[i] = (new Vector(
                                 (int)Math.Round((cos * res[i].Item1.X) - (sin * res[i].Item1.Y)),
                                 (int)Math.Round((sin * res[i].Item1.X) + (cos * res[i].Item1.Y)),
                                 res[i].Item1.Z), res[i].Item2);
+                if (i == 0) O = new Vector(
+                (int)Math.Round((cos * O.X) - (sin * O.Y)),
+                (int)Math.Round((sin * O.X) + (cos * O.Y)),
+                O.Z);
                 if (cosY != 0 || sinY != 0)
+                {
                     res[i] = (new Vector(
                                     (int)Math.Round((cosY * res[i].Item1.X) + (sinY * res[i].Item1.Z)),
                                     res[i].Item1.Y,
                                     (int)Math.Round((-sinY * res[i].Item1.X) + (cosY * res[i].Item1.Z))), res[i].Item2);
+                    if (i == 0) O = new Vector(
+                                    (int)Math.Round((cosY * O.X) + (sinY * O.Z)),
+                                    O.Y,
+                                    (int)Math.Round((-sinY * O.X) + (cosY * O.Z)));
+                }
                 if (cosX != 0 || sinX != 0)
+                {
                     res[i] = (new Vector(
                                 res[i].Item1.X,
                                 (int)Math.Round((cosX * res[i].Item1.Y) + (sinX * res[i].Item1.Z)),
                                 (int)Math.Round((-sinX * res[i].Item1.Y) + (cosX * res[i].Item1.Z))), res[i].Item2);
+                    if (i == 0) O = new Vector(
+                                    O.X,
+                                    (int)Math.Round((cosX * O.Y) + (sinX * O.Z)),
+                                    (int)Math.Round((-sinX * O.Y) + (cosX * O.Z)));
+                }
                 res[i] = (new Vector(res[i].Item1.X + point1.X,
                                     res[i].Item1.Y + point1.Y,
                                     res[i].Item1.Z + point1.Z), res[i].Item2);
+                if (i == 0) O += point1;
                 /*
                 res[i] = (new Vector((int)Math.Round((cos * res[i].Item1.X) + (sin * res[i].Item1.Z) - (O.X * cos) - (O.Z * sin) + O.X),
                          res[i].Item1.Y,
